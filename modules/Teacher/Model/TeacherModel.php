@@ -65,6 +65,54 @@
 
     }
 
+    private function ensureApiTeacherLinksTable()
+    {
+      $query = "CREATE TABLE IF NOT EXISTS api_teacher_links (
+        id int(11) NOT NULL AUTO_INCREMENT,
+        api_teacher_id varchar(64) NOT NULL,
+        local_teacher_id int(11) NOT NULL,
+        date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        date_modified timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY api_teacher_id (api_teacher_id),
+        UNIQUE KEY local_teacher_id (local_teacher_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
+
+      if($this->mydb->query($query) !== true)
+      {
+        die(mysqli_error($this->mydb));
+      }
+    }
+
+    public function getLinkedApiTeacherIdForLocalTeacher($localTeacherId)
+    {
+      $this->ensureApiTeacherLinksTable();
+      $localTeacherId = (int)$localTeacherId;
+      $query = "SELECT api_teacher_id FROM api_teacher_links WHERE local_teacher_id = $localTeacherId LIMIT 1";
+      $queryResult = mysqli_query($this->mydb, $query);
+
+      if($queryResult && $row = mysqli_fetch_assoc($queryResult))
+      {
+        return $row['api_teacher_id'];
+      }
+
+      return null;
+    }
+
+    public function getLocalTeacherById($localTeacherId)
+    {
+      $localTeacherId = (int)$localTeacherId;
+      $user = new user();
+      $user->assignAll("WHERE u.id = $localTeacherId AND u.user_type = 2");
+
+      if(count($user->usersArray) > 0)
+      {
+        return $user->usersArray[0];
+      }
+
+      return null;
+    }
+
     /*public function selectExams($exam = null)
   	{
         $exam = new Exam();

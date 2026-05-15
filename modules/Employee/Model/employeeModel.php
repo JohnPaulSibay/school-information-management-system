@@ -38,6 +38,7 @@
 
         public function selectAllStudents()
         {
+            $this->studentsArr = array();
             $user = new user();
             $user->assignAll();
             $this->usersObj = $user->usersArray;
@@ -49,6 +50,170 @@
                 }
             }
             return $this->studentsArr;
+        }
+
+        private function ensureApiStudentLinksTable()
+        {
+            $query = "CREATE TABLE IF NOT EXISTS api_student_links (
+                id int(11) NOT NULL AUTO_INCREMENT,
+                api_student_id varchar(64) NOT NULL,
+                local_student_id int(11) NOT NULL,
+                date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                date_modified timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY api_student_id (api_student_id),
+                UNIQUE KEY local_student_id (local_student_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
+
+            if($this->mydb->query($query) !== true)
+            {
+                die(mysqli_error($this->mydb));
+            }
+        }
+
+        public function getLinkedLocalStudentId($apiStudentId)
+        {
+            $this->ensureApiStudentLinksTable();
+            $apiStudentId = mysqli_real_escape_string($this->mydb, $apiStudentId);
+            $query = "SELECT local_student_id FROM api_student_links WHERE api_student_id = '$apiStudentId' LIMIT 1";
+            $queryResult = mysqli_query($this->mydb, $query);
+
+            if($queryResult && $row = mysqli_fetch_assoc($queryResult))
+            {
+                return $row['local_student_id'];
+            }
+
+            return null;
+        }
+
+        public function linkApiStudentToLocalStudent($apiStudentId, $localStudentId)
+        {
+            $this->ensureApiStudentLinksTable();
+            $apiStudentId = mysqli_real_escape_string($this->mydb, $apiStudentId);
+            $localStudentId = (int)$localStudentId;
+
+            $studentCheck = mysqli_query($this->mydb, "SELECT id FROM users WHERE id = $localStudentId AND user_type = 3 LIMIT 1");
+            if(!$studentCheck || mysqli_num_rows($studentCheck) == 0)
+            {
+                echo "<div class='text-danger' style='text-align:center; margin-top:15px;'>Selected local student account was not found.</div>";
+                return false;
+            }
+
+            $existingLocalLink = mysqli_query($this->mydb, "SELECT api_student_id FROM api_student_links WHERE local_student_id = $localStudentId AND api_student_id <> '$apiStudentId' LIMIT 1");
+            if($existingLocalLink && mysqli_num_rows($existingLocalLink) > 0)
+            {
+                echo "<div class='text-danger' style='text-align:center; margin-top:15px;'>Selected local student account is already linked to another API student.</div>";
+                return false;
+            }
+
+            $query = "INSERT INTO api_student_links (api_student_id, local_student_id)
+                      VALUES ('$apiStudentId', $localStudentId)
+                      ON DUPLICATE KEY UPDATE local_student_id = VALUES(local_student_id)";
+
+            if($this->mydb->query($query) !== true)
+            {
+                echo "<div class='text-danger' style='text-align:center; margin-top:15px;'>".mysqli_error($this->mydb)."</div>";
+                return false;
+            }
+
+            return true;
+        }
+
+        public function unlinkApiStudent($apiStudentId)
+        {
+            $this->ensureApiStudentLinksTable();
+            $apiStudentId = mysqli_real_escape_string($this->mydb, $apiStudentId);
+            $query = "DELETE FROM api_student_links WHERE api_student_id = '$apiStudentId'";
+
+            if($this->mydb->query($query) !== true)
+            {
+                echo "<div class='text-danger' style='text-align:center; margin-top:15px;'>".mysqli_error($this->mydb)."</div>";
+                return false;
+            }
+
+            return true;
+        }
+
+        private function ensureApiTeacherLinksTable()
+        {
+            $query = "CREATE TABLE IF NOT EXISTS api_teacher_links (
+                id int(11) NOT NULL AUTO_INCREMENT,
+                api_teacher_id varchar(64) NOT NULL,
+                local_teacher_id int(11) NOT NULL,
+                date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                date_modified timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY api_teacher_id (api_teacher_id),
+                UNIQUE KEY local_teacher_id (local_teacher_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
+
+            if($this->mydb->query($query) !== true)
+            {
+                die(mysqli_error($this->mydb));
+            }
+        }
+
+        public function getLinkedLocalTeacherId($apiTeacherId)
+        {
+            $this->ensureApiTeacherLinksTable();
+            $apiTeacherId = mysqli_real_escape_string($this->mydb, $apiTeacherId);
+            $query = "SELECT local_teacher_id FROM api_teacher_links WHERE api_teacher_id = '$apiTeacherId' LIMIT 1";
+            $queryResult = mysqli_query($this->mydb, $query);
+
+            if($queryResult && $row = mysqli_fetch_assoc($queryResult))
+            {
+                return $row['local_teacher_id'];
+            }
+
+            return null;
+        }
+
+        public function linkApiTeacherToLocalTeacher($apiTeacherId, $localTeacherId)
+        {
+            $this->ensureApiTeacherLinksTable();
+            $apiTeacherId = mysqli_real_escape_string($this->mydb, $apiTeacherId);
+            $localTeacherId = (int)$localTeacherId;
+
+            $teacherCheck = mysqli_query($this->mydb, "SELECT id FROM users WHERE id = $localTeacherId AND user_type = 2 LIMIT 1");
+            if(!$teacherCheck || mysqli_num_rows($teacherCheck) == 0)
+            {
+                echo "<div class='text-danger' style='text-align:center; margin-top:15px;'>Selected local teacher account was not found.</div>";
+                return false;
+            }
+
+            $existingLocalLink = mysqli_query($this->mydb, "SELECT api_teacher_id FROM api_teacher_links WHERE local_teacher_id = $localTeacherId AND api_teacher_id <> '$apiTeacherId' LIMIT 1");
+            if($existingLocalLink && mysqli_num_rows($existingLocalLink) > 0)
+            {
+                echo "<div class='text-danger' style='text-align:center; margin-top:15px;'>Selected local teacher account is already linked to another API lecturer.</div>";
+                return false;
+            }
+
+            $query = "INSERT INTO api_teacher_links (api_teacher_id, local_teacher_id)
+                      VALUES ('$apiTeacherId', $localTeacherId)
+                      ON DUPLICATE KEY UPDATE local_teacher_id = VALUES(local_teacher_id)";
+
+            if($this->mydb->query($query) !== true)
+            {
+                echo "<div class='text-danger' style='text-align:center; margin-top:15px;'>".mysqli_error($this->mydb)."</div>";
+                return false;
+            }
+
+            return true;
+        }
+
+        public function unlinkApiTeacher($apiTeacherId)
+        {
+            $this->ensureApiTeacherLinksTable();
+            $apiTeacherId = mysqli_real_escape_string($this->mydb, $apiTeacherId);
+            $query = "DELETE FROM api_teacher_links WHERE api_teacher_id = '$apiTeacherId'";
+
+            if($this->mydb->query($query) !== true)
+            {
+                echo "<div class='text-danger' style='text-align:center; margin-top:15px;'>".mysqli_error($this->mydb)."</div>";
+                return false;
+            }
+
+            return true;
         }
 
         public function selectAllTeachers()

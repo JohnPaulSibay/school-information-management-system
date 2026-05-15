@@ -1,12 +1,30 @@
 <?php
     class ParentView{
+        public function __construct()
+        {
+            $this->navigationControls();
+        }
+
+        private function navigationControls()
+        {
+            ?>
+            <div style="position:fixed; top:15px; right:20px; z-index:9999;">
+                <a href="parentController.php?page=Home">
+                    <button type="button" class="btn btn-outline-dark btn-sm">Home</button>
+                </a>
+                <a href="../../../logout.php">
+                    <button type="button" class="btn btn-outline-danger btn-sm">Logout</button>
+                </a>
+            </div>
+            <?php
+        }
 
         public function displayDashboardPage()
         {
             echo "<h1 style='text-align:left;  margin-top:40px; margin-bottom: 80px; margin-left:25px;'>Parent Dashboard</h1>";
             ?>
             <div style="width:75%; margin: 0 auto;">
-                <div class="d-flex justify-content-center" style="margin: 0 auto;">
+                <div class="d-flex justify-content-center flex-wrap" style="margin: 0 auto;">
                 <div class="col-sm-2" style="text-align:center;">
                     <a href="?page=PayFees">
                     <button type="button" class="btn btn-outline-dark" style="width: 180px; padding: 15px 0;">

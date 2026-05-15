@@ -23,7 +23,7 @@
 
   <form action="" method="POST" style="width: 32%; margin: 30px auto;">
       <div class="form-group">
-        <input type="number" class="form-control" placeholder="Enter your id" name="id" required>
+        <input type="text" class="form-control" placeholder="Enter your API username" name="id" required>
       </div>
 
       <div class="input-group mb-3">

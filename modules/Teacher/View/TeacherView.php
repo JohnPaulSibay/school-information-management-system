@@ -6,13 +6,109 @@
 require_once '../Model/TeacherModel.php';
 
 class TeacherView{
+  public function __construct()
+  {
+    $this->navigationControls();
+  }
+
+  private function h($value)
+  {
+    return htmlspecialchars((string)$value, ENT_QUOTES, "UTF-8");
+  }
+
+  private function apiValue($row, $key)
+  {
+    return isset($row[$key]) ? $this->h($row[$key]) : "";
+  }
+
+  private function apiDate($row, $key)
+  {
+    if(!isset($row[$key]) || $row[$key] == "")
+    {
+      return "";
+    }
+
+    $time = strtotime($row[$key]);
+    if($time === false)
+    {
+      return $this->h($row[$key]);
+    }
+
+    return date("Y-m-d", $time);
+  }
+
+  private function navigationControls()
+  {
+    ?>
+      <div style="position:fixed; top:15px; right:20px; z-index:9999;">
+        <a href="TeacherController.php?page=Home">
+          <button type="button" class="btn btn-outline-dark btn-sm">Home</button>
+        </a>
+        <a href="../../../logout.php">
+          <button type="button" class="btn btn-outline-danger btn-sm">Logout</button>
+        </a>
+      </div>
+    <?php
+  }
+
+  private function backToDashboardButton()
+  {
+    echo "<div style='text-align:center; margin-top:25px; margin-bottom:35px;'><a href='TeacherController.php?page=Home'><button type='button' class='btn btn-outline-dark'>Back to Dashboard</button></a></div>";
+  }
+
   public function homePage()
   {
     echo "<h1 style='text-align:left;  margin-top:40px; margin-bottom: 150px; margin-left:25px;'>Teacher Dashboard</h1>";
+    if(isset($_SESSION['usingCentralApi']) && $_SESSION['usingCentralApi'] && isset($_SESSION['apiRole']) && $_SESSION['apiRole'] == "Lecturer")
+    {
+      ?>
+        <div style="width: 75%; margin: 0 auto;">
+          <div class="d-flex justify-content-center flex-wrap" style="margin-top: 50px;">
+            <div class="col-sm-2" style="text-align:center;">
+              <a href="?page=ApiCourses">
+                <button type="button" class="btn btn-outline-dark" style="width: 180px; padding: 15px 0;">
+                  <i class="ion-ios-book" style="font-size:50px;"></i>
+                  <p class="card-text">S3 Courses</p>
+                </button>
+              </a>
+            </div>
+
+            <div class="col-sm-2" style="text-align:center;">
+              <a href="?page=ApiEvents">
+                <button type="button" class="btn btn-outline-dark" style="width: 180px; padding: 15px 0;">
+                  <i class="ion-ios-calendar" style="font-size:50px;"></i>
+                  <p class="card-text">S3 Events</p>
+                </button>
+              </a>
+            </div>
+
+            <div class="col-sm-2" style="text-align:center;">
+              <a href="?page=ApiAttendance">
+                <button type="button" class="btn btn-outline-dark" style="width: 180px; padding: 15px 0;">
+                  <i class="ion-clipboard" style="font-size:50px;"></i>
+                  <p class="card-text">S3 Attendance</p>
+                </button>
+              </a>
+            </div>
+
+            <div class="col-sm-2" style="text-align:center;">
+              <a href="?page=ApiGrades">
+                <button type="button" class="btn btn-outline-dark" style="width: 180px; padding: 15px 0;">
+                  <i class="ion-university" style="font-size:50px;"></i>
+                  <p class="card-text">S3 Grades</p>
+                </button>
+              </a>
+            </div>
+          </div>
+        </div>
+      <?php
+      return;
+    }
+
     echo "<div style='text-align:center;' margin-bottom:50px>";
     ?>
         <div style="width: 75%; margin: 0 auto;">
-                    <div class="d-flex justify-content-center" style="margin-top: 50px;">
+                    <div class="d-flex justify-content-center flex-wrap" style="margin-top: 50px;">
                             <div class="col-sm-2" style="text-align:center;">
                                 <a href="?page=SelectSubjectAndStudent">
                                     <button type="button" class="btn btn-outline-dark" style="width: 180px; padding: 15px 0;">
@@ -28,6 +124,33 @@ class TeacherView{
                                     <button type="button" class="btn btn-outline-dark" style="width: 180px; padding: 15px 0;">
                                         <i class="ion-ios-list" style="font-size:50px;"></i>
                                         <p class="card-text">Add Assignment</p>
+                                    </button>
+                                </a>
+                            </div>
+
+                            <div class="col-sm-2" style="text-align:center;">
+                                <a href="?page=ApiCourses">
+                                    <button type="button" class="btn btn-outline-dark" style="width: 180px; padding: 15px 0;">
+                                        <i class="ion-ios-book" style="font-size:50px;"></i>
+                                        <p class="card-text">S3 Courses</p>
+                                    </button>
+                                </a>
+                            </div>
+
+                            <div class="col-sm-2" style="text-align:center;">
+                                <a href="?page=ApiEvents">
+                                    <button type="button" class="btn btn-outline-dark" style="width: 180px; padding: 15px 0;">
+                                        <i class="ion-ios-calendar" style="font-size:50px;"></i>
+                                        <p class="card-text">S3 Events</p>
+                                    </button>
+                                </a>
+                            </div>
+
+                            <div class="col-sm-2" style="text-align:center;">
+                                <a href="?page=ApiAttendance">
+                                    <button type="button" class="btn btn-outline-dark" style="width: 180px; padding: 15px 0;">
+                                        <i class="ion-clipboard" style="font-size:50px;"></i>
+                                        <p class="card-text">S3 Attendance</p>
                                     </button>
                                 </a>
                             </div>
@@ -375,6 +498,218 @@ class TeacherView{
     <?php
 
   }
+
+  public function teacherApiLinkMissing($teacher = null)
+  {
+    echo "<h1 style='text-align:center; margin-top:40px; margin-bottom:35px;'>S3 Teacher Integration</h1>";
+    echo "<div class='alert alert-warning' style='width:70%; margin:0 auto; text-align:center;'>";
+    echo "This S1 teacher account is not linked to a central S3 lecturer record yet.";
+
+    if($teacher != null)
+    {
+      echo "<br><br><strong>Local teacher:</strong> ".$this->h($teacher->id." - ".$teacher->first_name." ".$teacher->second_name." ".$teacher->third_name." (".$teacher->email.")");
+    }
+
+    echo "<br><br>Ask an Employee/Admin to open <strong>Teacher Links</strong> and connect this local teacher account to the matching S3 lecturer.";
+    echo "</div>";
+    $this->backToDashboardButton();
+  }
+
+  public function displayApiTeacherCourses($courses)
+  {
+    echo "<h1 style='text-align:center; margin-top:40px; margin-bottom:35px;'>My S3 Courses</h1>";
+
+    if(count($courses) == 0)
+    {
+      echo "<h4 class='text-secondary' style='text-align:center;'>No S3 courses are assigned to this linked lecturer.</h4>";
+      $this->backToDashboardButton();
+      return;
+    }
+    ?>
+      <div class="table-responsive" style="width:90%; margin: 0 auto 35px auto;">
+        <table class="table table-borderless table-hover" style="box-shadow: 0px 4px 8px rgb(235, 235, 235);">
+          <tbody>
+            <tr class="text-white bg-dark" style="text-align:center;">
+              <th>Course ID</th>
+              <th>Code</th>
+              <th>Name</th>
+              <th>Lecturer</th>
+            </tr>
+            <?php for($i = 0; $i < count($courses); $i++): ?>
+              <tr style="text-align:center; border-bottom:1px solid rgb(230, 230, 230);">
+                <td><?php echo $this->apiValue($courses[$i], 'course_id') ?></td>
+                <td><?php echo $this->apiValue($courses[$i], 'course_code') ?></td>
+                <td><?php echo $this->apiValue($courses[$i], 'course_name') ?></td>
+                <td><?php echo $this->apiValue($courses[$i], 'lecturer') ?></td>
+              </tr>
+            <?php endfor ?>
+          </tbody>
+        </table>
+      </div>
+    <?php
+    $this->backToDashboardButton();
+  }
+
+  public function displayApiTeacherEvents($events)
+  {
+    echo "<h1 style='text-align:center; margin-top:40px; margin-bottom:35px;'>My S3 Events</h1>";
+
+    if(count($events) == 0)
+    {
+      echo "<h4 class='text-secondary' style='text-align:center;'>No S3 events are assigned to this linked lecturer.</h4>";
+      $this->backToDashboardButton();
+      return;
+    }
+    ?>
+      <div class="table-responsive" style="width:90%; margin: 0 auto 35px auto;">
+        <table class="table table-borderless table-hover" style="box-shadow: 0px 4px 8px rgb(235, 235, 235);">
+          <tbody>
+            <tr class="text-white bg-dark" style="text-align:center;">
+              <th>Event ID</th>
+              <th>Event</th>
+              <th>Course</th>
+              <th>Room</th>
+              <th>Date</th>
+            </tr>
+            <?php for($i = 0; $i < count($events); $i++): ?>
+              <tr style="text-align:center; border-bottom:1px solid rgb(230, 230, 230);">
+                <td><?php echo $this->apiValue($events[$i], 'event_id') ?></td>
+                <td><?php echo $this->apiValue($events[$i], 'event_name') ?></td>
+                <td><?php echo $this->apiValue($events[$i], 'course_code')." - ".$this->apiValue($events[$i], 'course_name') ?></td>
+                <td><?php echo $this->apiValue($events[$i], 'room') ?></td>
+                <td><?php echo $this->apiDate($events[$i], 'event_date') ?></td>
+              </tr>
+            <?php endfor ?>
+          </tbody>
+        </table>
+      </div>
+    <?php
+    $this->backToDashboardButton();
+  }
+
+  public function displayApiTeacherAttendance($attendance)
+  {
+    echo "<h1 style='text-align:center; margin-top:40px; margin-bottom:35px;'>My S3 Attendance Records</h1>";
+
+    if(count($attendance) == 0)
+    {
+      echo "<h4 class='text-secondary' style='text-align:center;'>No S3 attendance records were found for this linked lecturer.</h4>";
+      $this->backToDashboardButton();
+      return;
+    }
+    ?>
+      <div class="table-responsive" style="width:95%; margin: 0 auto 35px auto;">
+        <table class="table table-borderless table-hover" style="box-shadow: 0px 4px 8px rgb(235, 235, 235);">
+          <tbody>
+            <tr class="text-white bg-dark" style="text-align:center;">
+              <th>ID</th>
+              <th>Student No.</th>
+              <th>Student</th>
+              <th>Event</th>
+              <th>Subject</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th>Time In</th>
+              <th>Remarks</th>
+            </tr>
+            <?php for($i = 0; $i < count($attendance); $i++): ?>
+              <tr style="text-align:center; border-bottom:1px solid rgb(230, 230, 230);">
+                <td><?php echo $this->apiValue($attendance[$i], 'attendance_id') ?></td>
+                <td><?php echo $this->apiValue($attendance[$i], 'student_number') ?></td>
+                <td><?php echo $this->apiValue($attendance[$i], 'student_name') ?></td>
+                <td><?php echo $this->apiValue($attendance[$i], 'event_name') ?></td>
+                <td><?php echo $this->apiValue($attendance[$i], 'subject_code')." - ".$this->apiValue($attendance[$i], 'subject_name') ?></td>
+                <td><?php echo $this->apiDate($attendance[$i], 'attendance_date') ?></td>
+                <td><?php echo $this->apiValue($attendance[$i], 'status') ?></td>
+                <td><?php echo $this->apiValue($attendance[$i], 'time_in') ?></td>
+                <td><?php echo $this->apiValue($attendance[$i], 'remarks') ?></td>
+              </tr>
+            <?php endfor ?>
+          </tbody>
+        </table>
+      </div>
+    <?php
+    $this->backToDashboardButton();
+  }
+
+  public function displayApiTeacherGrades($gradebook, $categories, $teacherId)
+  {
+    echo "<h1 style='text-align:center; margin-top:40px; margin-bottom:35px;'>S3 Grade Input</h1>";
+    echo "<h6 class='text-primary' style='text-align:center; margin-bottom:30px;'>Grades are saved directly to the central API database.</h6>";
+
+    if(count($gradebook) == 0)
+    {
+      echo "<h4 class='text-secondary' style='text-align:center;'>No S3 courses are assigned to this lecturer.</h4>";
+      $this->backToDashboardButton();
+      return;
+    }
+
+    if(count($categories) == 0)
+    {
+      echo "<h4 class='text-danger' style='text-align:center;'>No S3 grade categories found.</h4>";
+      $this->backToDashboardButton();
+      return;
+    }
+
+    for($i = 0; $i < count($gradebook); $i++)
+    {
+      $course = $gradebook[$i]['course'];
+      $students = $gradebook[$i]['students'];
+      $courseId = isset($course['course_id']) ? $this->apiValue($course, 'course_id') : "";
+      ?>
+        <h3 style="text-align:center; margin-top:35px;"><?php echo $this->apiValue($course, 'course_code')." - ".$this->apiValue($course, 'course_name') ?></h3>
+        <?php if(count($students) == 0): ?>
+          <h5 class="text-secondary" style="text-align:center; margin:20px 0;">No students found for this S3 course.</h5>
+        <?php else: ?>
+          <div class="table-responsive" style="width:95%; margin:20px auto 45px auto;">
+            <table class="table table-borderless table-hover" style="box-shadow:0px 4px 8px rgb(235,235,235);">
+              <tbody>
+                <tr class="text-white bg-dark" style="text-align:center;">
+                  <th>Student No.</th>
+                  <th>Student</th>
+                  <?php for($c = 0; $c < count($categories); $c++): ?>
+                    <th><?php echo ucfirst($this->apiValue($categories[$c], 'category_name'))." / ".$this->apiValue($categories[$c], 'max_score') ?></th>
+                  <?php endfor ?>
+                </tr>
+                <?php for($s = 0; $s < count($students); $s++): ?>
+                  <tr style="text-align:center; border-bottom:1px solid rgb(230,230,230);">
+                    <td style="vertical-align:middle;"><?php echo $this->apiValue($students[$s], 'student_number') ?></td>
+                    <td style="vertical-align:middle;"><strong><?php echo $this->apiValue($students[$s], 'first_name')." ".$this->apiValue($students[$s], 'last_name') ?></strong></td>
+                    <?php for($c = 0; $c < count($categories); $c++): ?>
+                      <?php
+                        $placeholder = "Not yet";
+                        $grades = isset($students[$s]['grades']) && is_array($students[$s]['grades']) ? $students[$s]['grades'] : array();
+
+                        for($g = 0; $g < count($grades); $g++)
+                        {
+                          if(isset($grades[$g]['category_id']) && isset($categories[$c]['category_id']) && (string)$grades[$g]['category_id'] == (string)$categories[$c]['category_id'])
+                          {
+                            $placeholder = isset($grades[$g]['grade_score']) ? $this->apiValue($grades[$g], 'grade_score') : "Not yet";
+                            break;
+                          }
+                        }
+                      ?>
+                      <td style="vertical-align:middle;">
+                        <input type="number"
+                               min="0"
+                               max="<?php echo $this->apiValue($categories[$c], 'max_score') ?>"
+                               class="form-control text-primary"
+                               style="border-radius:20px;"
+                               placeholder="<?php echo $placeholder ?>"
+                               onblur="xmlUpdateApiGrade(this.value, <?php echo $this->apiValue($students[$s], 'student_id') ?>, <?php echo $courseId ?>, <?php echo $this->apiValue($categories[$c], 'category_id') ?>, <?php echo $teacherId ?>);">
+                      </td>
+                    <?php endfor ?>
+                  </tr>
+                <?php endfor ?>
+              </tbody>
+            </table>
+          </div>
+        <?php endif ?>
+      <?php
+    }
+
+    $this->backToDashboardButton();
+  }
   
 }
 
@@ -418,6 +753,22 @@ class TeacherView{
           xmlhttp.open("GET", "update_grade.php?ss=" + selectedSubject + "&ssi=" + selectedStudentId + "&sg=" + v + "&gmid=" + gradeMethodId + "&tid=" + teacherId, true);
           xmlhttp.send();
         }
+      }
+
+      function xmlUpdateApiGrade(studentGrade, selectedStudentId, selectedSubjectId, gradeCategoryId, teacherId){
+        if(studentGrade === "" || parseFloat(studentGrade) < 0)
+        {
+          return;
+        }
+
+        var xmlhttp = new XMLHttpRequest();
+        xmlhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                // Saved through S3 API.
+            }
+        };
+        xmlhttp.open("GET", "update_grade.php?api=1&ss=" + selectedSubjectId + "&ssi=" + selectedStudentId + "&sg=" + studentGrade + "&gmid=" + gradeCategoryId + "&tid=" + teacherId, true);
+        xmlhttp.send();
       }
   </script>
 

@@ -7,6 +7,35 @@
             $this->imageURL = "../../../";
         }
 
+        private function h($value)
+        {
+            return htmlspecialchars((string)$value, ENT_QUOTES, "UTF-8");
+        }
+
+        private function apiValue($row, $key)
+        {
+            return isset($row[$key]) ? $this->h($row[$key]) : "";
+        }
+
+        private function apiDate($row, $key)
+        {
+            if (!isset($row[$key]) || $row[$key] == "") {
+                return "";
+            }
+
+            $time = strtotime($row[$key]);
+            if ($time === false) {
+                return $this->h($row[$key]);
+            }
+
+            return date("Y-m-d", $time);
+        }
+
+        private function dashboardBackButton()
+        {
+            echo "<div style='text-align:center; margin-top:30px; margin-bottom:30px;'><a href='studentController.php'><button type='button' class='btn btn-outline-dark'>Back to Dashboard</button></a> <a href='../../../logout.php'><button type='button' class='btn btn-outline-danger'>Logout</button></a></div>";
+        }
+
         public function displayDashboardPage($student, $semesterName, $notifyArr)
         {
             if($semesterName)
@@ -21,8 +50,13 @@
             echo "<h5 style='text-align:left;  margin-top:10px; margin-bottom: 80px; margin-left:25px;'>Welcome back, ".$student['first_name'].".</h5>";
 
             ?>
+            <div style="text-align:right; margin-right:30px; margin-bottom:20px;">
+                <a href="../../../logout.php">
+                    <button type="button" class="btn btn-outline-danger">Logout</button>
+                </a>
+            </div>
             <div style="width: 75%; margin: 0 auto;">
-                <div class="d-flex justify-content-center" style="margin-top: 50px;">
+                <div class="d-flex justify-content-center flex-wrap" style="margin-top: 50px;">
                     <div class="col-sm-2" style="text-align:center;">
                           <a href="?selected=SubjectsGrades">
                         <button type="button" class="btn btn-outline-dark" style="width: 180px; padding: 15px 0;">
@@ -50,6 +84,24 @@
                            </a>
                   </div>
 
+                  <div class="col-sm-2" style="text-align:center;">
+                          <a href="?selected=Attendance">
+                        <button type="button" class="btn btn-outline-dark" style="width: 180px; padding: 15px 0;">
+                             <i class="fa fa-calendar-check" style="font-size:50px;"></i>
+                            <p class="card-text" style="margin-top:10px;">Attendance</p>
+                        </button>
+                           </a>
+                  </div>
+
+                  <div class="col-sm-2" style="text-align:center;">
+                          <a href="?selected=Events">
+                        <button type="button" class="btn btn-outline-dark" style="width: 180px; padding: 15px 0;">
+                             <i class="fa fa-calendar-alt" style="font-size:50px;"></i>
+                            <p class="card-text" style="margin-top:10px;">Events</p>
+                        </button>
+                           </a>
+                  </div>
+
 
                 <?php if(count($notifyArr) == 0): ?>
                   <div class="col-sm-2" style="text-align:center;">
@@ -72,6 +124,47 @@
                 <?php endif ?>
 
               </div>
+            </div>
+            <?php
+        }
+
+        public function displayCentralApiDashboardPage($apiStudent)
+        {
+            $studentName = "Student";
+
+            if(is_array($apiStudent))
+            {
+                $studentName = trim($this->apiValue($apiStudent, 'first_name')." ".$this->apiValue($apiStudent, 'last_name'));
+            }
+
+            echo "<h1 style='text-align:left; margin-top:40px; margin-bottom:40px; margin-left:25px;'>Student Dashboard - Central API</h1>";
+            echo "<h5 style='text-align:left; margin-top:10px; margin-bottom:80px; margin-left:25px;'>Welcome back, ".$this->h($studentName).".</h5>";
+            ?>
+            <div style="text-align:right; margin-right:30px; margin-bottom:20px;">
+                <a href="../../../logout.php">
+                    <button type="button" class="btn btn-outline-danger">Logout</button>
+                </a>
+            </div>
+            <div style="width:75%; margin:0 auto;">
+                <div class="d-flex justify-content-center flex-wrap" style="margin-top:50px;">
+                    <div class="col-sm-2" style="text-align:center;">
+                        <a href="?selected=Attendance">
+                            <button type="button" class="btn btn-outline-dark" style="width:180px; padding:15px 0;">
+                                <i class="fa fa-calendar-check" style="font-size:50px;"></i>
+                                <p class="card-text" style="margin-top:10px;">Attendance</p>
+                            </button>
+                        </a>
+                    </div>
+
+                    <div class="col-sm-2" style="text-align:center;">
+                        <a href="?selected=Events">
+                            <button type="button" class="btn btn-outline-dark" style="width:180px; padding:15px 0;">
+                                <i class="fa fa-calendar-alt" style="font-size:50px;"></i>
+                                <p class="card-text" style="margin-top:10px;">Events</p>
+                            </button>
+                        </a>
+                    </div>
+                </div>
             </div>
             <?php
         }
@@ -141,7 +234,145 @@
               </table>
               </div>
               <?php
+              $this->dashboardBackButton();
             
+        }
+
+        public function showApiSubjectsWithGrades($apiStudent, $subjects, $categories)
+        {
+            echo "<h1 style='text-align:center;  margin-top:40px; margin-bottom: 50px; '>Your Subjects' Grades</h1>";
+            $studentName = trim($this->apiValue($apiStudent, 'first_name')." ".$this->apiValue($apiStudent, 'last_name'));
+            echo "<h5 style='text-align:center; margin-bottom:35px;'>".$this->h($studentName)."</h5>";
+
+            if(count($subjects) == 0)
+            {
+                echo "<h4 class='text-danger' style='text-align:center; margin-top:60px;'>No central API grade records found yet.</h4>";
+                $this->dashboardBackButton();
+                return;
+            }
+
+            ?>
+            <div class="d-flex justify-content-center">
+              <table class="table table-borderless table-hover" style=" margin: 15px 20px;  width:900px;  box-shadow: 0px 4px 8px rgb(235, 235, 235);">
+              <tbody>
+              <tr class="text-white bg-info" style="text-align: center;" >
+                    <th>Subject</th>
+                    <?php for($i = 0; $i < count($categories); $i++): ?>
+                        <th><?php echo ucfirst($this->apiValue($categories[$i], 'category_name')) ?></th>
+                    <?php endfor ?>
+                    <th>Overall</th>
+              </tr>
+              <?php for($i = 0; $i < count($subjects); $i++): ?>
+                    <tr style="border-bottom: 1px solid rgb(230, 230, 230); text-align: center;">
+                        <td><?php echo $this->apiValue($subjects[$i], 'subject_name')." - ".$this->apiValue($subjects[$i], 'subject_code') ?></td>
+                        <?php
+                            $grades = isset($subjects[$i]['grades']) && is_array($subjects[$i]['grades']) ? $subjects[$i]['grades'] : array();
+                            for($j = 0; $j < count($categories); $j++)
+                            {
+                                $printed = false;
+                                for($k = 0; $k < count($grades); $k++)
+                                {
+                                    if(isset($grades[$k]['category_id']) && isset($categories[$j]['category_id']) && (string)$grades[$k]['category_id'] == (string)$categories[$j]['category_id'])
+                                    {
+                                        echo "<td>".$this->apiValue($grades[$k], 'grade_score')." / ".$this->apiValue($grades[$k], 'max_score')."</td>";
+                                        $printed = true;
+                                        break;
+                                    }
+                                }
+
+                                if(!$printed)
+                                {
+                                    echo "<td>Not graded</td>";
+                                }
+                            }
+                        ?>
+                        <td><?php echo $this->apiValue($subjects[$i], 'total_score')." / ".$this->apiValue($subjects[$i], 'total_possible') ?></td>
+                    </tr>
+              <?php endfor ?>
+              </tbody>
+              </table>
+            </div>
+            <?php
+            $this->dashboardBackButton();
+        }
+
+        public function displayAttendance($student, $attendance)
+        {
+            echo "<h1 style='text-align:center;  margin-top:40px; margin-bottom: 20px;'>My Attendance</h1>";
+            echo "<h5 style='text-align:center; margin-bottom: 50px;'>".$this->apiValue($student, 'first_name')." ".$this->apiValue($student, 'last_name')." - ".$this->apiValue($student, 'student_number')."</h5>";
+
+            if(count($attendance) == 0)
+            {
+                echo "<h4 class='text-secondary' style='text-align:center; margin-top:60px;'>No attendance records found.</h4>";
+                $this->dashboardBackButton();
+                return;
+            }
+            ?>
+            <div class="d-flex justify-content-center">
+                <table class="table table-borderless table-hover" style="margin: 15px 20px; width:900px; box-shadow: 0px 4px 8px rgb(235, 235, 235);">
+                    <tbody>
+                        <tr class="text-white bg-info" style="text-align: center;">
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Time In</th>
+                            <th>Remarks</th>
+                        </tr>
+                        <?php for($i = 0; $i < count($attendance); $i++): ?>
+                            <tr style="border-bottom: 1px solid rgb(230, 230, 230); text-align: center;">
+                                <td><?php echo $this->apiDate($attendance[$i], 'attendance_date') ?></td>
+                                <td><?php echo $this->apiValue($attendance[$i], 'status') ?></td>
+                                <td><?php echo $this->apiValue($attendance[$i], 'time_in') ?></td>
+                                <td><?php echo $this->apiValue($attendance[$i], 'remarks') ?></td>
+                            </tr>
+                        <?php endfor ?>
+                    </tbody>
+                </table>
+            </div>
+            <?php
+            $this->dashboardBackButton();
+        }
+
+        public function displayEvents($student, $events)
+        {
+            echo "<h1 style='text-align:center;  margin-top:40px; margin-bottom: 20px;'>My Events</h1>";
+            echo "<h5 style='text-align:center; margin-bottom: 50px;'>".$this->apiValue($student, 'course_code')." - ".$this->apiValue($student, 'section_name')."</h5>";
+
+            if(count($events) == 0)
+            {
+                echo "<h4 class='text-secondary' style='text-align:center; margin-top:60px;'>No events found for your course.</h4>";
+                $this->dashboardBackButton();
+                return;
+            }
+            ?>
+            <div class="d-flex justify-content-center">
+                <table class="table table-borderless table-hover" style="margin: 15px 20px; width:950px; box-shadow: 0px 4px 8px rgb(235, 235, 235);">
+                    <tbody>
+                        <tr class="text-white bg-info" style="text-align: center;">
+                            <th>Event</th>
+                            <th>Course</th>
+                            <th>Room</th>
+                            <th>Date</th>
+                        </tr>
+                        <?php for($i = 0; $i < count($events); $i++): ?>
+                            <tr style="border-bottom: 1px solid rgb(230, 230, 230); text-align: center;">
+                                <td><?php echo $this->apiValue($events[$i], 'event_name') ?></td>
+                                <td><?php echo $this->apiValue($events[$i], 'course_code') ?></td>
+                                <td><?php echo $this->apiValue($events[$i], 'room') ?></td>
+                                <td><?php echo $this->apiDate($events[$i], 'event_date') ?></td>
+                            </tr>
+                        <?php endfor ?>
+                    </tbody>
+                </table>
+            </div>
+            <?php
+            $this->dashboardBackButton();
+        }
+
+        public function studentApiLinkMissing($title = "Student API")
+        {
+            echo "<h1 style='text-align:center;  margin-top:40px; margin-bottom: 80px;'>".$this->h($title)."</h1>";
+            echo "<h4 class='text-danger' style='text-align:center; margin-top:60px;'>This S1 student account is not linked to a central API student record.</h4>";
+            $this->dashboardBackButton();
         }
 
         public function ShowNotification($notifyArr)
@@ -165,6 +396,7 @@
                 <?php
                }
            }
+           $this->dashboardBackButton();
         }
 
         public function MyIdPage($url, $semesterName, $user, $image, $reg_date)
@@ -190,12 +422,14 @@
                     
                 </div>
             <?php
+            $this->dashboardBackButton();
         }
 
         public function notRegisteredErrorInIdPage()
         {
             echo "<h1 style='text-align:center;  margin-top:40px; margin-bottom: 80px;'>My-ID</h1>";
             echo "<h3 class='text-danger' style='text-align:center; margin-top:80px; margin-bottom: 60px; '>You are not registered yet </h3>";
+            $this->dashboardBackButton();
         }
 
         /*public function busPage()
@@ -217,7 +451,7 @@
             }
         }*/
 
-        public function registerInBus($busesArray, $isRegistered)
+        public function registerInBus($busesArray, $isRegistered, $studentId = null)
         {
             echo "<h1 style='font-size:50px; text-align:center;  margin-top:40px; margin-bottom: 50px;'>Bus Registration</h1>";
             if($isRegistered != -1 && $isRegistered)
@@ -289,7 +523,7 @@
                             <td><?php echo $busesArray[$i]->fees ?></td>
                             <?php if($busesArray[$i]->seatsLeft > 0)
                             {
-                                $tempStudentId = $_SESSION['loggedId'];
+                                $tempStudentId = $studentId != null ? $studentId : $_SESSION['loggedId'];
                                 $tempBusId = $busesArray[$i]->id;
                                 if($isRegistered == $busesArray[$i]->id)
                                 {
@@ -304,7 +538,7 @@
                             }
                             else
                             {
-                                $tempStudentId = $_SESSION['loggedId'];
+                                $tempStudentId = $studentId != null ? $studentId : $_SESSION['loggedId'];
                                 $tempBusId = $busesArray[$i]->id;
                                 if($isRegistered == $busesArray[$i]->id)
                                 {
@@ -327,6 +561,7 @@
                 </table>
                     <div id="returnAfterRegister"></div>
                 <?php
+                $this->dashboardBackButton();
                         
         
         }

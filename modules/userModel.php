@@ -47,6 +47,145 @@
             $this->mydb = DB::getInstance();
         }
 
+        private function sendCentralApiRequest($method, $path, $data = null)
+        {
+            $apiUrl = "http://localhost:3000/api".$path;
+            $headers = "Accept: application/json\r\n";
+            $httpOptions = array(
+                "method" => $method,
+                "timeout" => 5,
+                "ignore_errors" => true,
+                "header" => $headers
+            );
+
+            if($data !== null)
+            {
+                $headers .= "Content-Type: application/json\r\n";
+                $httpOptions["header"] = $headers;
+                $httpOptions["content"] = json_encode($data);
+            }
+
+            $context = stream_context_create(array("http" => $httpOptions));
+            $response = @file_get_contents($apiUrl, false, $context);
+
+            if($response === false)
+            {
+                return array("status" => "error", "message" => "Failed to connect to central API.");
+            }
+
+            $result = json_decode($response, true);
+
+            if(json_last_error() !== JSON_ERROR_NONE)
+            {
+                return array("status" => "error", "message" => "Invalid response from central API.");
+            }
+
+            return $result;
+        }
+
+        private function setCentralApiSession($apiUser)
+        {
+            $_SESSION['usingCentralApi'] = true;
+            $_SESSION['apiUserId'] = isset($apiUser['user_id']) ? $apiUser['user_id'] : null;
+            $_SESSION['apiRole'] = isset($apiUser['role']) ? $apiUser['role'] : "";
+            $_SESSION['apiFullName'] = isset($apiUser['full_name']) ? $apiUser['full_name'] : "";
+            $_SESSION['apiUsername'] = isset($apiUser['username']) ? $apiUser['username'] : "";
+            $_SESSION['apiStudentId'] = isset($apiUser['student_id']) ? $apiUser['student_id'] : null;
+            $_SESSION['apiTeacherId'] = isset($apiUser['teacher_id']) ? $apiUser['teacher_id'] : null;
+
+            if($_SESSION['apiRole'] == "Student" && !empty($_SESSION['apiStudentId']))
+            {
+                $_SESSION['loggedId'] = $_SESSION['apiStudentId'];
+            }
+            else if($_SESSION['apiRole'] == "Lecturer" && !empty($_SESSION['apiTeacherId']))
+            {
+                $_SESSION['loggedId'] = $_SESSION['apiTeacherId'];
+            }
+            else
+            {
+                $_SESSION['loggedId'] = $_SESSION['apiUserId'];
+            }
+        }
+
+        private function centralApiLogin($username, $password)
+        {
+            if(empty($username) || empty($password))
+            {
+                return array("status" => "error", "message" => "Username and password are required.");
+            }
+
+            return $this->sendCentralApiRequest("POST", "/login", array(
+                "username" => trim($username),
+                "password" => $password
+            ));
+        }
+
+        private function displayLoginError($message)
+        {
+            ?>
+            <div style="color:red">
+                <?php echo htmlspecialchars($message, ENT_QUOTES, "UTF-8"); ?>
+            </div>
+            <?php
+        }
+
+        private function displayRedirecting()
+        {
+            ?>
+            <div style="color:green">
+                <?php echo "Redirecting..."; ?>
+            </div>
+            <?php
+        }
+
+        private function redirectCentralApiUser($apiUser, $administratorOnly = false)
+        {
+            $this->setCentralApiSession($apiUser);
+            $role = isset($apiUser['role']) ? $apiUser['role'] : "";
+
+            if($administratorOnly && $role != "Administrator")
+            {
+                $this->displayLoginError("Only Administrator accounts can login here.");
+                return true;
+            }
+
+            if($role == "Administrator")
+            {
+                header("refresh:1;url=/PharaohSchoolSystem/modules/Employee/Controller/employeeController.php?access=api_session&page=home");
+                $this->displayRedirecting();
+                return true;
+            }
+
+            if($role == "Lecturer")
+            {
+                if(empty($_SESSION['apiTeacherId']))
+                {
+                    $this->displayLoginError("This lecturer account is not linked to a central teacher record.");
+                    return true;
+                }
+
+                header("refresh:1;url=/PharaohSchoolSystem/modules/Teacher/Controller/teacherController.php?page=Home");
+                $this->displayRedirecting();
+                return true;
+            }
+
+            if($role == "Student")
+            {
+                if(empty($_SESSION['apiStudentId']))
+                {
+                    $this->displayLoginError("This student account is not linked to a central student record.");
+                    return true;
+                }
+
+                header("refresh:1;url=/PharaohSchoolSystem/modules/Student/Controller/studentController.php");
+                $this->displayRedirecting();
+                return true;
+            }
+
+            $this->displayLoginError("Unsupported API role.");
+            return true;
+        }
+
         public function assignAll($condition='')
         {
             $selected1 = $this->select("*", "users u", $condition, 'ORDER BY first_name, second_name, third_name, id');
@@ -252,9 +391,22 @@
 
         public function employeeLogin($id, $password)
         {
+            $apiResult = $this->centralApiLogin($id, $password);
+
+            if(isset($apiResult['status']) && $apiResult['status'] == "success" && isset($apiResult['user']))
+            {
+                $this->redirectCentralApiUser($apiResult['user'], true);
+                return;
+            }
             
             if(!empty($id) && !empty($password))
             {
+                if(!ctype_digit((string)$id))
+                {
+                    $this->displayLoginError("Invalid username or password");
+                    return;
+                }
+
                 if(strpos($id, "'") === false && strpos($id, "'") === false)
                 {
                     $password = $this->pwdEncryption($password);
@@ -344,9 +496,23 @@
 
         public function checkUserInDB($id, $password, StrategyFactory $factory = null) 
         {
+            $apiResult = $this->centralApiLogin($id, $password);
+
+            if(isset($apiResult['status']) && $apiResult['status'] == "success" && isset($apiResult['user']))
+            {
+                $this->redirectCentralApiUser($apiResult['user']);
+                return;
+            }
+
             $factory = new StrategyFactory();
             if(!empty($id) && !empty($password))
             {
+                if(!ctype_digit((string)$id))
+                {
+                    $this->displayLoginError("Invalid username or password");
+                    return;
+                }
+
                 if(strpos($id, "'") === false && strpos($id, "'") === false)
                 {
                     $password = $this->pwdEncryption($password);

@@ -1,4 +1,57 @@
 <?php
+    if(isset($_REQUEST['api']) && $_REQUEST['api'] == 1)
+    {
+        $studentId = isset($_REQUEST['ssi']) ? $_REQUEST['ssi'] : "";
+        $courseId = isset($_REQUEST['ss']) ? $_REQUEST['ss'] : "";
+        $gradeScore = isset($_REQUEST['sg']) ? $_REQUEST['sg'] : "";
+        $categoryId = isset($_REQUEST['gmid']) ? $_REQUEST['gmid'] : "";
+        $teacherId = isset($_REQUEST['tid']) ? $_REQUEST['tid'] : "";
+
+        if($studentId == "" || $courseId == "" || $gradeScore == "" || $categoryId == "")
+        {
+            echo "Missing grade information.";
+            exit;
+        }
+
+        $apiUrl = "http://localhost:3000/api/grades";
+        $payload = json_encode(array(
+            "student_id" => $studentId,
+            "course_id" => $courseId,
+            "category_id" => $categoryId,
+            "teacher_id" => $teacherId,
+            "grade_score" => $gradeScore
+        ));
+
+        $context = stream_context_create(array(
+            "http" => array(
+                "method" => "POST",
+                "timeout" => 5,
+                "ignore_errors" => true,
+                "header" => "Accept: application/json\r\nContent-Type: application/json\r\n",
+                "content" => $payload
+            )
+        ));
+
+        $response = @file_get_contents($apiUrl, false, $context);
+
+        if($response === false)
+        {
+            echo "Failed to connect to S3 API.";
+            exit;
+        }
+
+        $result = json_decode($response, true);
+
+        if(!isset($result['status']) || $result['status'] != "success")
+        {
+            echo isset($result['message']) ? htmlspecialchars($result['message'], ENT_QUOTES, "UTF-8") : "S3 API error.";
+            exit;
+        }
+
+        echo isset($result['message']) ? htmlspecialchars($result['message'], ENT_QUOTES, "UTF-8") : "Grade saved successfully.";
+        exit;
+    }
+
     require_once '../../systemLog.php';
     require_once '../../DB.php';
     require_once 'observerdp.php';
