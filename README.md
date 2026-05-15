@@ -3,10 +3,9 @@ School Management System developed by PHP and MySQL.
 
 # System Features
 ## Credentials
-**Admin** - id: 1 / passsword: 123 <br/>
-**Teacher** - id: 153 / passsword: 123 <br/>
-**Student** - id: 151 / passsword: 123 <br/>
-**Parent** - id: 163 / passsword: 123 <br/>
+**Admin** -  id/user: admin / passsword: admin123 <br/>
+**Teacher** - id/user: lecturer / passsword: lecturer123 <br/>
+**Student** - id/user: student / passsword: student123 <br/>
 ## Guest 🌚
 **• Register<br/>
 • Check for Acceptance<br/>
