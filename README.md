@@ -1,8 +1,6 @@
 # School Management System
-School Management System developed by PHP and MySQL.
+School Management System developed by PHP 
 
-# System Features
-## Credentials
 **Admin** -  id/user: admin / passsword: admin123 <br/>
 **Teacher** - id/user: lecturer / passsword: lecturer123 <br/>
 **Student** - id/user: student / passsword: student123 <br/>
