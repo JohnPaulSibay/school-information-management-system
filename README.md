@@ -5,9 +5,7 @@ School Management System developed by PHP
 **Teacher** - id/user: lecturer / passsword: lecturer123 <br/>
 **Student** - id/user: student / passsword: student123 <br/>
 
-**Feel free to contact me: mahmoud.ahmed9@outlook.com**
--------------------------------------------------------------------------------------------------------------------------
-my three System Integration repositories:
+##My three System Integration repositories:
 
 S1 PHP School Portal:
 https://github.com/JohnPaulSibay/school-information-management-system
